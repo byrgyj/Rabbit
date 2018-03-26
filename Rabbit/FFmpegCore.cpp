@@ -1,22 +1,19 @@
 #include "StdAfx.h"
 #include "FFmpegCore.h"
+#include <fstream>
 
 int readPacket(void *opaque, uint8_t *buf, int buf_size){
-	FILE *file = (FILE*)opaque;
-	if (file == NULL){
-		return 0;
-	}
-
-	if (!feof(file)){
-		int sz = fread(buf, 1, buf_size, file);
-		return sz;
+	FFmpegCore *ffm = (FFmpegCore*)opaque;
+	if (ffm != NULL){
+		return ffm->consumeData(buf, buf_size);
 	} else {
 		return 0;
 	}
 
 }
 
-FFmpegCore::FFmpegCore(char *file) : mFilePath(file), mVideoStreamIndex(0), mAudioStreamIndex(0), mInputFmtCtx(NULL), mVideoCdcCtx(NULL), mIOCtx(NULL), mDataFile(NULL){
+FFmpegCore::FFmpegCore(char *file) : mFilePath(file), mVideoStreamIndex(0), mAudioStreamIndex(0), mInputFmtCtx(NULL), mVideoCdcCtx(NULL), mIOCtx(NULL),
+	mDataFile(NULL), mBuffer(NULL), mVideoResource(NULL){
 	av_register_all();
 }
 
@@ -33,6 +30,10 @@ FFmpegCore::~FFmpegCore(){
 	if (mDataFile != NULL){
 		fclose(mDataFile);
 	}
+
+	if (mVideoResource != NULL){
+		delete mVideoResource;
+	}
 }
 
 bool FFmpegCore::initFFmpeg(){
@@ -40,9 +41,8 @@ bool FFmpegCore::initFFmpeg(){
 	if (mDataFile == NULL){
 		return false;
 	}
-
 	unsigned char *buffer = (unsigned char*)av_malloc(1024);
-	mIOCtx = avio_alloc_context(buffer, 1024, 0, (void*)mDataFile, readPacket, NULL, NULL);
+	mIOCtx = avio_alloc_context(buffer, 1024, 0, (void*)this, readPacket, NULL, NULL);
 	if (mIOCtx == NULL){
 		return false;
 	}
@@ -78,7 +78,6 @@ bool FFmpegCore::initFFmpeg(){
 	if (ret < 0){
 		return -1;
 	}
-
 
 	return true;
 }
@@ -120,4 +119,16 @@ bool FFmpegCore::decodeVideo(AVPacket *pkt, AVFrame *fram){
 	} else {
 		return false;
 	}
+}
+
+int FFmpegCore::consumeData(uint8_t *data, int dataSize){
+	if (mDataFile == NULL){
+		return 0;
+	}
+
+	if (mVideoResource == NULL){
+		mVideoResource = new VideoResource(mFilePath.c_str());
+	}
+
+	return mVideoResource->getData(data, dataSize);
 }

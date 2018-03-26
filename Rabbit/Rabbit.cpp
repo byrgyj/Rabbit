@@ -9,8 +9,7 @@
 int _tmain(int argc, _TCHAR* argv[])
 {
 	AVFormatContext *inputFmtCtx = NULL;
-
-	char *src = "ffd5.f4v";
+	char *src = "encrypt.flv";
 
 	FFmpegCore ffmCore(src);
 	if (!ffmCore.initFFmpeg()){
