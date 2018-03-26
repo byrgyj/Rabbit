@@ -1,11 +1,14 @@
 #pragma once
+/*
+author: byrgyj@126.com
+*/
+
 #ifdef _WIN32
 extern "C"{
 #include <SDL2/SDL.h>
 #include <libavformat/avformat.h>
 };
 #endif
-#include <SDL2/SDL.h>
 
 #define FRAME_REFRESH_EVENT (SDL_USEREVENT + 1)
 
