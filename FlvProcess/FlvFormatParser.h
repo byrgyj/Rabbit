@@ -45,6 +45,34 @@ public:
 	int _nMediaLen;
 };
 
+static unsigned int ShowU32(unsigned char *pBuf) { return (pBuf[0] << 24) | (pBuf[1] << 16) | (pBuf[2] << 8) | pBuf[3]; }
+static unsigned int ShowU24(unsigned char *pBuf) { return (pBuf[0] << 16) | (pBuf[1] << 8) | (pBuf[2]); }
+static unsigned int ShowU16(unsigned char *pBuf) { return (pBuf[0] << 8) | (pBuf[1]); }
+static unsigned int ShowU8(unsigned char *pBuf) { return (pBuf[0]); }
+static void WriteU64(uint64_t & x, int length, int value)
+{
+	uint64_t mask = 0xFFFFFFFFFFFFFFFF >> (64 - length);
+	x = (x << length) | ((uint64_t)value & mask);
+}
+static unsigned int WriteU32(unsigned int n)
+{
+	unsigned int nn = 0;
+	unsigned char *p = (unsigned char *)&n;
+	unsigned char *pp = (unsigned char *)&nn;
+	pp[0] = p[3];
+	pp[1] = p[2];
+	pp[2] = p[1];
+	pp[3] = p[0];
+	return nn;
+}
+
+static void ConvertToHex(unsigned char *dest, unsigned int value){
+	unsigned char *p = (unsigned char *)&value;
+	dest[0] = p[2];
+	dest[1] = p[1];
+	dest[2] = p[0];
+}
+
 class FlvFormatParser
 {
 public:
@@ -65,42 +93,8 @@ public:
 
 	bool EncryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **encryptedData, int &encryptedSize);
 	bool DecryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **decryptedData, int &decryptedSize);
+
 private:
-// 	typedef struct FlvHeader_s
-// 	{
-// 		int nVersion;
-// 		int bHaveVideo, bHaveAudio;
-// 		int nHeadSize;
-// 
-// 		unsigned char *pFlvHeader;
-// 	} FlvHeader;
-// 	struct TagHeader
-// 	{
-// 		int nType;
-// 		int nDataSize;
-// 		int nTimeStamp;
-// 		int nTSEx;
-// 		int nStreamID;
-// 
-// 		unsigned int nTotalTS;
-// 
-// 		TagHeader() : nType(0), nDataSize(0), nTimeStamp(0), nTSEx(0), nStreamID(0), nTotalTS(0) {}
-// 		~TagHeader() {}
-// 	};
-
-// 	class Tag
-// 	{
-// 	public:
-// 	    Tag() : _pTagHeader(NULL), _pTagData(NULL), _pMedia(NULL), _nMediaLen(0) {}
-// 		void Init(TagHeader *pHeader, unsigned char *pBuf, int nLeftLen);
-// 
-// 		TagHeader _header;
-// 		unsigned char *_pTagHeader;
-// 		unsigned char *_pTagData;
-// 		unsigned char *_pMedia;
-// 		int _nMediaLen;
-// 	};
-
 	class CVideoTag : public Tag
 	{
 	public:
@@ -146,36 +140,6 @@ private:
 		~FlvStat() {}
 	};
 
-
-
-	static unsigned int ShowU32(unsigned char *pBuf) { return (pBuf[0] << 24) | (pBuf[1] << 16) | (pBuf[2] << 8) | pBuf[3]; }
-	static unsigned int ShowU24(unsigned char *pBuf) { return (pBuf[0] << 16) | (pBuf[1] << 8) | (pBuf[2]); }
-	static unsigned int ShowU16(unsigned char *pBuf) { return (pBuf[0] << 8) | (pBuf[1]); }
-	static unsigned int ShowU8(unsigned char *pBuf) { return (pBuf[0]); }
-	static void WriteU64(uint64_t & x, int length, int value)
-	{
-		uint64_t mask = 0xFFFFFFFFFFFFFFFF >> (64 - length);
-		x = (x << length) | ((uint64_t)value & mask);
-	}
-    static unsigned int WriteU32(unsigned int n)
-    {
-        unsigned int nn = 0;
-        unsigned char *p = (unsigned char *)&n;
-        unsigned char *pp = (unsigned char *)&nn;
-        pp[0] = p[3];
-        pp[1] = p[2];
-        pp[2] = p[1];
-        pp[3] = p[0];
-        return nn;
-    }
-
-	static void ConvertToHex(unsigned char *dest, unsigned int value){
-		unsigned char *p = (unsigned char *)&value;
-		dest[0] = p[2];
-		dest[1] = p[1];
-		dest[2] = p[0];
-	}
-
 	friend class Tag;
 	
 private:
@@ -188,9 +152,10 @@ private:
 	int StatVideo(Tag *pTag);
 	int IsUserDataTag(Tag *pTag);
 
-	public:
-		bool isParserEnd() { return mParserEnd; }
-
+public:
+	bool isParserEnd() { return mParserEnd; }
+	void setParseEnd(bool flag) { mParserEnd = flag; }
+	unsigned int getLastTagSize() { return nLastTagSize; }
 private:
 
 	FlvHeader* _pFlvHeader;
@@ -200,6 +165,8 @@ private:
 	AES *mAes;
 	HANDLE mMutex;
 	HANDLE mEvent;
+
+
 	// H.264
 	int _nNalUnitLength;
 

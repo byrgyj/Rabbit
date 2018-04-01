@@ -10,17 +10,23 @@ public:
 	bool init(int type);
 	int beginEncrypt(const char *srcFilePath, const char *destFilePath);
 	int begineSave();
-	FlvFormatParser *getParser() { return mParser; }
-	char *getSrcPath() { return mSrcFilePath;}
+	int getBufferSize() { return mBufferSize; }
+	int writeTail(unsigned int sz);
+	int writeData(char *data, int sz);
 
-	public:
+	FlvFormatParser *getParser() { return mParser; }
+	std::string getSrcPath() { return mSrcFilePath;}
+
+public:
 	FlvFormatParser *mParser;
 	fstream *mFile;
 	const char *mOutPutFilePath;
 
-	unsigned char *pBuf;
-	unsigned char *pBak;
-	char *mSrcFilePath;
-	char *mDestFilePath;
+	unsigned char *mDataBuf;
+	unsigned char *mDataBak;
+	std::string mSrcFilePath;
+	std::string mDestFilePath;
+
+	int mBufferSize;
 };
 
