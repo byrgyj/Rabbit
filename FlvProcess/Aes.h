@@ -1,4 +1,6 @@
-#pragma once
+//#pragma once
+#ifndef AES_H
+#define AES_H
 /*
 author: byrgyj@126.com
 */
@@ -30,3 +32,4 @@ private:
 	void invMixColumns(unsigned char state[][4]);
 };
 
+#endif

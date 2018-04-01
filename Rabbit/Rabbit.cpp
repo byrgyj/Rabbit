@@ -11,6 +11,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	typedef bool(*apiInit)(int);
 	typedef int(*apiEncryptFlvFile)(const char *, const char *);
 
+
 	apiInit init = NULL;
 	apiEncryptFlvFile encryptFlvFile = NULL;
 	HINSTANCE dll = LoadLibrary(L"FlvProcess.dll");
@@ -19,16 +20,16 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	init = (apiInit)GetProcAddress(dll, "init");
-	encryptFlvFile = (apiEncryptFlvFile)GetProcAddress(dll, "encryptFlvFile");
-	if (!init || !encryptFlvFile){
-		return 0;
-	}
- 	bool bInit = init(1);
+// 	encryptFlvFile = (apiEncryptFlvFile)GetProcAddress(dll, "encryptFlvFile");
+// 	if (!init || !encryptFlvFile){
+// 		return 0;
+// 	}
+ 	bool bInit = init(2);
 	if (!bInit){
 		return -1;
 	}
 
-	encryptFlvFile("ffd5.f4v", "enc.flv");
+	//encryptFlvFile("ffd5.f4v", "enc.flv");
 
 	while(true){
 		Sleep(2000);

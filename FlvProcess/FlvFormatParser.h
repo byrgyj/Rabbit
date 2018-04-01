@@ -1,5 +1,5 @@
-#ifndef FLVPARSER_H
-#define FLVPARSER_H
+#ifndef FLVPARSER_1_H
+#define FLVPARSER_1_H
 
 #include <vector>
 #include <list>
