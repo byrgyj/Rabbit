@@ -4,38 +4,11 @@
 #include "stdafx.h"
 #include "FFmpegCore.h"
 #include "windows.h"
+#include <fstream>
 
 #include "SdlContainer.h"
 int _tmain(int argc, _TCHAR* argv[])
 {
-	typedef bool(*apiInit)(int);
-	typedef int(*apiEncryptFlvFile)(const char *, const char *);
-
-
-	apiInit init = NULL;
-	apiEncryptFlvFile encryptFlvFile = NULL;
-	HINSTANCE dll = LoadLibrary(L"FlvProcess.dll");
-	if (dll == NULL){
-		return 0;
-	}
-
-	init = (apiInit)GetProcAddress(dll, "init");
-// 	encryptFlvFile = (apiEncryptFlvFile)GetProcAddress(dll, "encryptFlvFile");
-// 	if (!init || !encryptFlvFile){
-// 		return 0;
-// 	}
- 	bool bInit = init(2);
-	if (!bInit){
-		return -1;
-	}
-
-	//encryptFlvFile("ffd5.f4v", "enc.flv");
-
-	while(true){
-		Sleep(2000);
-	}
-
-	return 0;
 	AVFormatContext *inputFmtCtx = NULL;
 	char *src = "encrypt.flv";
 

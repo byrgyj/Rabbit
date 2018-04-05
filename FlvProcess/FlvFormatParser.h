@@ -5,6 +5,7 @@
 #include <list>
 #include <Windows.h>
 #include "Aes.h"
+#include "RingBuffer.h"
 
 using namespace std;
 
@@ -90,6 +91,8 @@ public:
 	Tag *getTag();
 	int writeTag(fstream *f, Tag *tag);
 	int writeTail(fstream *f);
+
+	int saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer);
 
 	bool EncryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **encryptedData, int &encryptedSize);
 	bool DecryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **decryptedData, int &decryptedSize);

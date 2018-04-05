@@ -71,8 +71,14 @@ DWORD WINAPI saveThread(void *param){
 			if (cur != NULL){
 				parser->writeTag(enc->mFile, cur);
 			} else {
-				enc->writeTail(parser->getLastTagSize());
-				break;
+				if (parser->isParserEnd()){
+					enc->writeTail(parser->getLastTagSize());
+					break;
+				}
+				else {
+					Sleep(100);
+				}
+			
 			}
 		}
 	}
@@ -81,18 +87,21 @@ DWORD WINAPI saveThread(void *param){
 	return 0;
 }
 
-bool EncryptWrapper::init(int type){
-	mParser = new FlvFormatParser(type);
+bool EncryptWrapper::init(const char *srcFile, const char *destFile){
+	if (srcFile == NULL || destFile == NULL){
+		return false;
+	}
+	mSrcFilePath = srcFile;
+	mOutPutFilePath = destFile;
+
+	mParser = new FlvFormatParser(1);
 	return mParser != NULL;
 }
 
-int EncryptWrapper::beginEncrypt(const char *srcFilePath, const char *destFilePath){
-	if (mParser == NULL || srcFilePath == NULL || destFilePath == NULL){
+int EncryptWrapper::beginEncrypt(){
+	if (mParser == NULL){
 		return -1;
 	}
-
-	mSrcFilePath = srcFilePath;
-	mOutPutFilePath = destFilePath;
 
 	mDataBuf = new unsigned char[mBufferSize];
 	mDataBak = new unsigned char[mBufferSize];

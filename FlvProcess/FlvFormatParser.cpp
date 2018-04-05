@@ -325,6 +325,141 @@ int FlvFormatParser::writeTail(fstream *f){
 	f->close();
 	return 0;
 }
+int FlvFormatParser::saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer){
+	int writeSize = 0;
+	unsigned int nn = WriteU32(nLastTagSize);
+	writeSize += ringBuffer->writeData((char *)&nn, 4);
+
+	//check duplicate start code
+	if (tag->_header.nType == 0x09 && *(tag->_pTagData + 1) == 0x01) {
+		int keyFrame = ((tag->_pTagData[0]) >> 4) & 0xF;
+		CVideoTag *vTag = (CVideoTag*)tag;
+		if (keyFrame == 1){
+			if (mOperation == Oper_Encrypt){
+				int outSize = 0;
+				unsigned char *encData = NULL;
+				EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
+
+				vTag->_header.nDataSize = outSize;
+
+				ConvertToHex(vTag->_pTagHeader + 1, outSize);
+				if (vTag->_pTagData != NULL){
+					delete[]vTag->_pTagData;
+				}
+				vTag->_pTagData = encData;
+			}
+			else if (mOperation == Oper_Decrypt){
+				unsigned char *decData = NULL;
+				int decSize = 0;
+				DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
+				vTag->_header.nDataSize = decSize;
+				ConvertToHex(vTag->_pTagHeader + 1, decSize);
+				if (vTag->_pTagData != NULL){
+					delete[]vTag->_pTagData;
+				}
+				vTag->_pTagData = decData;
+			}
+		}
+
+		bool duplicate = false;
+		unsigned char *pStartCode = tag->_pTagData + 5 + _nNalUnitLength;
+		//printf("tagsize=%d\n",(*it_tag)->_header.nDataSize);
+		unsigned nalu_len = 0;
+		unsigned char *p_nalu_len = (unsigned char *)&nalu_len;
+		switch (_nNalUnitLength) {
+		case 4:
+			nalu_len = ShowU32(tag->_pTagData + 5);
+			break;
+		case 3:
+			nalu_len = ShowU24(tag->_pTagData + 5);
+			break;
+		case 2:
+			nalu_len = ShowU16(tag->_pTagData + 5);
+			break;
+		default:
+			nalu_len = ShowU8(tag->_pTagData + 5);
+			break;
+		}
+
+		unsigned char *pStartCodeRecord = pStartCode;
+		int i;
+		for (i = 0; i < tag->_header.nDataSize - 5 - _nNalUnitLength - 4; ++i) {
+			if (pStartCode[i] == 0x00 && pStartCode[i + 1] == 0x00 && pStartCode[i + 2] == 0x00 &&
+				pStartCode[i + 3] == 0x01) {
+				if (pStartCode[i + 4] == 0x67) {
+					//printf("duplicate sps found!\n");
+					i += 4;
+					continue;
+				}
+				else if (pStartCode[i + 4] == 0x68) {
+					//printf("duplicate pps found!\n");
+					i += 4;
+					continue;
+				}
+				else if (pStartCode[i + 4] == 0x06) {
+					//printf("duplicate sei found!\n");
+					i += 4;
+					continue;
+				}
+				else {
+					i += 4;
+					//printf("offset=%d\n",i);
+					duplicate = true;
+					break;
+				}
+			}
+		}
+
+		if (duplicate) {
+			nalu_len -= i;
+			tag->_header.nDataSize -= i;
+			unsigned char *p = (unsigned char *)&(tag->_header.nDataSize);
+			tag->_pTagHeader[1] = p[2];
+			tag->_pTagHeader[2] = p[1];
+			tag->_pTagHeader[3] = p[0];
+
+			ringBuffer->writeData((char *)tag->_pTagHeader, 11);
+			switch (_nNalUnitLength) {
+			case 4:
+				*(tag->_pTagData + 5) = p_nalu_len[3];
+				*(tag->_pTagData + 6) = p_nalu_len[2];
+				*(tag->_pTagData + 7) = p_nalu_len[1];
+				*(tag->_pTagData + 8) = p_nalu_len[0];
+				break;
+			case 3:
+				*(tag->_pTagData + 5) = p_nalu_len[2];
+				*(tag->_pTagData + 6) = p_nalu_len[1];
+				*(tag->_pTagData + 7) = p_nalu_len[0];
+				break;
+			case 2:
+				*(tag->_pTagData + 5) = p_nalu_len[1];
+				*(tag->_pTagData + 6) = p_nalu_len[0];
+				break;
+			default:
+				*(tag->_pTagData + 5) = p_nalu_len[0];
+				break;
+			}
+
+			writeSize += ringBuffer->writeData((char *)tag->_pTagData, pStartCode - tag->_pTagData);
+			writeSize += ringBuffer->writeData((char *)pStartCode + i, tag->_header.nDataSize - (pStartCode - tag->_pTagData));
+
+		}
+		else {
+			writeSize += ringBuffer->writeData((char *)tag->_pTagHeader, 11);
+			writeSize += ringBuffer->writeData((char *)tag->_pTagData, tag->_header.nDataSize);
+		}
+	}
+	else {
+		writeSize += ringBuffer->writeData((char *)tag->_pTagHeader, 11);
+		writeSize += ringBuffer->writeData((char *)tag->_pTagData, tag->_header.nDataSize);
+	}
+
+	nLastTagSize = 11 + tag->_header.nDataSize;
+
+	return writeSize;
+}
+
+
 int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 	unsigned int nn = WriteU32(nLastTagSize);
 	f->write((char *)&nn, 4);
@@ -454,99 +589,7 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 
 	return 1;
 }
-// 
-// int FlvFormatParser::DumpFlvToMemoryBuffer(unsigned char *buffer, int bufferSize){
-// 	int curIndex = 0;
-//   
-// 	memcpy(buffer + curIndex, (char *)_pFlvHeader->pFlvHeader, _pFlvHeader->nHeadSize);
-// 	curIndex += _pFlvHeader->nHeadSize;
-//   
-//     unsigned int nLastTagSize = 0;
-// 
-//     vector<Tag *>::iterator it_tag;
-//     for (it_tag = _vpTag.begin(); it_tag < _vpTag.end(); it_tag++)
-//     {
-//         unsigned int nn = WriteU32(nLastTagSize);
-// 		memcpy(buffer + curIndex, (char*)&nn, 4);
-// 		curIndex += 4;
-// 
-// 		//int tagIndex = it_tag - _vpTag.begin();
-//         //check duplicate start code
-//         if ((*it_tag)->_header.nType == 0x09 && *((*it_tag)->_pTagData + 1) == 0x01) {
-// 			int keyFrame = (((*it_tag)->_pTagData[0]) >> 4) & 0xF;		
-// 			CVideoTag *vTag = (CVideoTag*)*it_tag;
-// 			if (keyFrame == 1){
-// 				if (mOperation == Oper_Encrypt){
-// 					int outSize = 0;
-// 					unsigned char *encData = NULL;
-// 					EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
-// 
-// 					vTag->_header.nDataSize = outSize;
-// 
-// 					ConvertToHex(vTag->_pTagHeader + 1, outSize);
-// 					if (vTag->_pTagData != NULL){
-// 						delete[]vTag->_pTagData;
-// 					}
-// 					vTag->_pTagData = encData;
-// 				} else if (mOperation == Oper_Decrypt){
-// 					unsigned char *decData = NULL;
-// 					int decSize = 0;
-// 					DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
-// 					vTag->_header.nDataSize = decSize;
-// 					ConvertToHex(vTag->_pTagHeader + 1, decSize);
-// 					if (vTag->_pTagData != NULL){
-// 						delete[]vTag->_pTagData;
-// 					}
-// 					vTag->_pTagData = decData;
-// 				}
-// 			}
-// 			
-//             bool duplicate = false;
-//             unsigned char *pStartCode = (*it_tag)->_pTagData + 5 + _nNalUnitLength;
-//             unsigned nalu_len = 0;
-//             unsigned char *p_nalu_len=(unsigned char *)&nalu_len;
-//             switch (_nNalUnitLength) {
-//             case 4:
-//                 nalu_len = ShowU32((*it_tag)->_pTagData + 5);
-//                 break;
-//             case 3:
-//                 nalu_len = ShowU24((*it_tag)->_pTagData + 5);
-//                 break;
-//             case 2:
-//                 nalu_len = ShowU16((*it_tag)->_pTagData + 5);
-//                 break;
-//             default:
-//                 nalu_len = ShowU8((*it_tag)->_pTagData + 5);
-//                 break;
-//             }
-// 
-// 
-//             unsigned char *pStartCodeRecord = pStartCode;
-//             int i;
-// 
-//             if (duplicate) {
-// 			} else {
-// 				memcpy(buffer + curIndex, (char *)(*it_tag)->_pTagHeader, 11);
-// 				curIndex += 11;
-// 
-// 				memcpy(buffer + curIndex, (char *)(*it_tag)->_pTagData, (*it_tag)->_header.nDataSize);
-// 				curIndex += (*it_tag)->_header.nDataSize;
-//             }
-//         } else {
-// 			memcpy(buffer + curIndex, (char *)(*it_tag)->_pTagHeader, 11);
-// 			curIndex += 11;
-// 
-// 			memcpy(buffer + curIndex, (char *)(*it_tag)->_pTagData, (*it_tag)->_header.nDataSize);
-// 			curIndex += (*it_tag)->_header.nDataSize;
-//         }
-// 
-//         nLastTagSize = 11 + (*it_tag)->_header.nDataSize;
-//     }
-//     unsigned int nn = WriteU32(nLastTagSize);
-// 	memcpy(buffer + curIndex, (char*)&nn, 4);
-// 	curIndex += 4;
-//     return curIndex;
-// }
+
 
 bool FlvFormatParser::EncryptData(unsigned char *pVideoData, int srcSize, unsigned char **encryptedData, int &encryptedSize)
 {
