@@ -33,24 +33,21 @@ Mp4Parser::~Mp4Parser(void)
 		delete []stcoTable;
 }
 
-void Mp4Parser::init()
+void Mp4Parser::init(const char *srcFile)
 {
-	std::string luo   = "moov_befor_mdat.mp4"; 
-	FILE *fin       = fopen(luo.c_str(), "rb");
-
+	FILE *fin = fopen(srcFile, "rb");
 	if(fin == NULL){
 		printf("failed to open\n");
 		return ;
 	}
-// 	fseek(fin, 0, SEEK_END);
-// 	int fileSize = ftell(fin);
-// 	fseek(fin, 0, SEEK_SET);
 
-	int fileSize = 32 + 183307 + 8;
+	int fileSize = 13921;
 	mAudioData = new Mp4DataBuffer(fileSize);
 	fread(mAudioData->getDataIndex(), 1, fileSize, fin);
-	fseek(fin, 0, SEEK_SET);
 
+	if (fin != NULL){
+		fclose(fin);
+	}
 }
 bool Mp4Parser::parser()
 {
@@ -569,6 +566,54 @@ mp4_stco_box Mp4Parser::mp4ReadStcoBox(int size)
     return box;
 }
 
+mp4_stss_box &Mp4Parser::getStssBox(){
+	return mMoovBox.trak[0]->mdia.minf.stbl.stss;
+}
+bool Mp4Parser::getSampleOffset(int sampleIndex, int &offset, int &size){
+	mp4_stbl_box &stblBox = mMoovBox.trak[0]->mdia.minf.stbl;
+	mp4_stsz_box &stszBox = mMoovBox.trak[0]->mdia.minf.stbl.stsz;
+	if (sampleIndex < 0 || sampleIndex >= stszBox.table_size){
+		return false;
+	}
+
+	size = stszBox.sample_size_table[sampleIndex];
+
+	mp4_stsc_box &stscBox = mMoovBox.trak[0]->mdia.minf.stbl.stsc;
+	int destChunkIndex = 0;
+	bool find = false;
+
+	if (stscBox.map_amount == 1){
+		destChunkIndex = sampleIndex / stscBox.scmap[0].sample_amount_in_cur_table;
+		find = true;
+	} else {
+		for (int i = 0; i < stscBox.map_amount; i++){
+			mp4_list_t scmap = stscBox.scmap[i];
+			int firstChunkIndex = scmap.first_chunk_num - 1;
+			int samplePerChunk = scmap.sample_amount_in_cur_table;
+
+			if (destChunkIndex < firstChunkIndex){
+				find = true;
+				break;
+			}
+
+			int chunkIndex = sampleIndex / scmap.sample_amount_in_cur_table;
+			if (destChunkIndex < chunkIndex){
+				destChunkIndex = chunkIndex;
+			}
+		}
+	}
+
+
+	if (find){
+		mp4_stco_box &stcoBox = stblBox.stco;
+		if (destChunkIndex < stcoBox.chunk_offset_amount){
+			offset = stcoBox.chunk_offset_from_file_begin[destChunkIndex];
+			return true;
+		}
+	}
+
+	return false;
+}
 
 /*container box
   (stsd, stts, stsz|stz2, stsc, stco|co64, ctts, stss)

@@ -302,8 +302,7 @@ struct mp4_moov_box{
 	MP4_BASE_BOX;
 	mp4_mvhd_box mvhd;
 	mp4_iods_box iods;
-	std::vector<mp4_trak_box *>
-		trak;
+	std::vector<mp4_trak_box *>	trak;
 	mp4_udta_box udta;
 };
 
@@ -318,7 +317,7 @@ public:
 	Mp4Parser(void);
 	~Mp4Parser(void);
 
-	void init();
+	void init(const char *srcFile);
 	bool parser();
 
 	int mp4ReadMvhdBox(int size);  //level 3
@@ -337,6 +336,11 @@ public:
 	mp4_stsc_box mp4ReadStscBox(int size);  //level 8
 	mp4_stsz_box mp4ReadStszBox(int size);  //level 8
 	mp4_stco_box mp4ReadStcoBox(int size);
+
+
+	mp4_stss_box &getStssBox();
+	bool getSampleOffset(int sampleIndex, int &offset, int &size);
+	
 	
 /*container box
   (stsd, stts, stsz|stz2, stsc, stco|co64, ctts, stss)
@@ -350,9 +354,7 @@ public:
   (mdhd, hdlr, minf)
 */
 	mp4_mdia_box mp4ReadMdiaBox(int size);
-	//mp4_udta_box mp4ReadUdtaBox(int size);
 	void mp4ReadTrakBox( int size);
-	//void mp4ReadIodsBox(int size);  //level 3
 	void mp4ReadMoovBox(int size);   //level 2
 	void mp4ReadFtypBox(int size);  //level 2
 	void mp4ReadMdatBox(int size);

@@ -84,6 +84,7 @@
     <ClInclude Include="FlvFormatParser.h" />
     <ClInclude Include="Interface.h" />
     <ClInclude Include="Mp4DataBuffer.h" />
+    <ClInclude Include="Mp4EncryptWrapper.h" />
     <ClInclude Include="Mp4Parser.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="stdafx.h" />
@@ -105,6 +106,7 @@
     <ClCompile Include="FlvProcess.cpp" />
     <ClCompile Include="Interface.cpp" />
     <ClCompile Include="Mp4DataBuffer.cpp" />
+    <ClCompile Include="Mp4EncryptWrapper.cpp" />
     <ClCompile Include="Mp4Parser.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="stdafx.cpp">
