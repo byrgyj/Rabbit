@@ -83,6 +83,8 @@
     <ClInclude Include="EncryptWrapper.h" />
     <ClInclude Include="FlvFormatParser.h" />
     <ClInclude Include="Interface.h" />
+    <ClInclude Include="Mp4DataBuffer.h" />
+    <ClInclude Include="Mp4Parser.h" />
     <ClInclude Include="RingBuffer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
@@ -102,6 +104,8 @@
     <ClCompile Include="FlvFormatParser.cpp" />
     <ClCompile Include="FlvProcess.cpp" />
     <ClCompile Include="Interface.cpp" />
+    <ClCompile Include="Mp4DataBuffer.cpp" />
+    <ClCompile Include="Mp4Parser.cpp" />
     <ClCompile Include="RingBuffer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
