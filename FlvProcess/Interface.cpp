@@ -1,17 +1,16 @@
 #include "StdAfx.h"
 #include "Interface.h"
 #include "FlvFormatParser.h"
-#include <fstream>
 #include "EncryptWrapper.h"
 #include "DecryptWrapper.h"
 
 EncryptWrapper *encWrapper = NULL;
 DecryptWrapper *decWrapper = NULL;
 bool init(int type, const char *srcFile, const char *destFile){
-	if (type == 1){
+	if (type == Oper_Encrypt){
 		encWrapper = new EncryptWrapper();
 		return encWrapper->init(srcFile, destFile);
-	} else if (type == 2) {
+	} else if (type == Oper_Decrypt) {
 		decWrapper = new DecryptWrapper();
 		return decWrapper->init(srcFile, destFile);
 	} else {

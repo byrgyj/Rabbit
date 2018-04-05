@@ -1,6 +1,7 @@
 #pragma once
 #include "FlvFormatParser.h"
 #include <fstream>
+#include <thread>
 class EncryptWrapper
 {
 public:
@@ -24,6 +25,10 @@ public:
 
 	unsigned char *mDataBuf;
 	unsigned char *mDataBak;
+
+	thread *mEncThread;
+	thread *mSaveThread;
+
 	std::string mSrcFilePath;
 	std::string mDestFilePath;
 

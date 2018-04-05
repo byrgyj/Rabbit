@@ -1,18 +1,16 @@
 #include "StdAfx.h"
 #include "EncryptWrapper.h"
-#include <fstream>
 
-EncryptWrapper::EncryptWrapper(void) : mBufferSize(2048 * 1024){
+EncryptWrapper::EncryptWrapper(void) : mBufferSize(2048 * 1024), mEncThread(NULL), mSaveThread(NULL){
 }
 EncryptWrapper::~EncryptWrapper(void){
 	delete []mDataBak;
 	delete []mDataBuf;
 }
-
-DWORD WINAPI encryptThead(void *param){
+void encryptRun(void *param){
 	EncryptWrapper *enc = (EncryptWrapper*)param;
 	if (enc == NULL){
-		return 0;
+		return;
 	}
 
 	int nBufSize = enc->getBufferSize();
@@ -39,53 +37,53 @@ DWORD WINAPI encryptThead(void *param){
 		}
 		nFlvPos -= nUsedLen;
 	}
-	enc->getParser()->setParseEnd(true);
-	return 0;
 
+	enc->getParser()->setParseEnd(true);
+	return;
 }
 
-DWORD WINAPI saveThread(void *param){
+void saveRun(void *param){
 	EncryptWrapper *enc = (EncryptWrapper*)param;
 	if (enc == NULL) {
-		return 0;
+		return;
 	}
 	FlvFormatParser *parser = enc->getParser();
 	if (parser == NULL){
-		return 0;
+		return ;
 	}
 
 	bool initHeader = false;
-	
-	while(true){
+	while (true){
 		if (!initHeader){
 			FlvHeader* header = parser->getFlvHeader();
 			if (header != NULL){
 				enc->writeData((char *)header->pFlvHeader, header->nHeadSize);
 				initHeader = true;
-			} else {
-				Sleep(100);
+			}
+			else {
+				Sleep(10);
 				continue;
 			}
-		} else {
+		}
+		else {
 			Tag *cur = parser->getTag();
 			if (cur != NULL){
 				parser->writeTag(enc->mFile, cur);
-			} else {
+			}
+			else {
 				if (parser->isParserEnd()){
 					enc->writeTail(parser->getLastTagSize());
 					break;
 				}
 				else {
-					Sleep(100);
+					Sleep(10);
 				}
-			
+
 			}
 		}
-	}
-
-
-	return 0;
+	} // end while
 }
+
 
 bool EncryptWrapper::init(const char *srcFile, const char *destFile){
 	if (srcFile == NULL || destFile == NULL){
@@ -106,13 +104,16 @@ int EncryptWrapper::beginEncrypt(){
 	mDataBuf = new unsigned char[mBufferSize];
 	mDataBak = new unsigned char[mBufferSize];
 
-	CreateThread(NULL, 0, encryptThead, this, 0, NULL);
+	mEncThread = new thread(encryptRun, this);
+	mEncThread->detach();
 	return 0;
 }
 
 int EncryptWrapper::begineSave(){
 	mFile = new fstream(mOutPutFilePath, ios_base::out | ios_base::binary);
-	CreateThread(NULL, 0, saveThread, this, 0, NULL);
+
+	mSaveThread = new thread(saveRun, this);
+	mSaveThread->join();
 	return 0;
 }
 

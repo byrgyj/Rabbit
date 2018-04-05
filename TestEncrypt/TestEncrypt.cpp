@@ -30,11 +30,6 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	encryptFlvFile();
 
-	while (true)
-	{
-		Sleep(1000);
-	}
-
 	return 0;
 }
 

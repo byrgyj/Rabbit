@@ -1,6 +1,7 @@
 
 #include "FlvFormatParser.h"
 #include <fstream>
+#include <thread>
 #include "RingBuffer.h"
 class DataBuffer {
 public:
@@ -9,11 +10,6 @@ public:
 
 	int getBufferSize() { return mDataSize; }
 	std::string getSrcPath() { return mSrcPath; }
-
-	bool init(const char *srcFile, const char *destFile);
-	int writeTail(unsigned int sz);
-	virtual int writeData(char *data, int sz);
-
 public:
 	char *mDataBuf;
 	char *mDataBak;
@@ -33,7 +29,7 @@ public:
 	DecryptWrapper();
 	~DecryptWrapper(void);
 
-	int init(const char *srcFile, const char *destFile);
+	bool init(const char *srcFile, const char *destFile);
 	int getData(char *buffer, int bufSize);
 	virtual int writeData(char *data, int sz);
 	FlvFormatParser *getParser() { return mParser; }
@@ -44,6 +40,7 @@ private:
 	FlvFormatParser *mParser;
 	RingBuffer *mRingBuffer;
 
-	char *mOutputData;
+	thread *mDecThread;
+	thread *mSaveThrad;
 };
 

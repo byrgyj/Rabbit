@@ -17,48 +17,20 @@ DataBuffer::~DataBuffer() {
 	}
 }
 
-bool DataBuffer::init(const char *srcFile, const char *destFile){
-	if (srcFile == NULL) {
-		return false;
-	}
-	mSrcPath = srcFile;
+DecryptWrapper::DecryptWrapper() : DataBuffer(),  mParser(NULL) , mRingBuffer(NULL), mSaveThrad(NULL), mDecThread(NULL){
 
-	if (destFile != NULL){
-		mDestPath = destFile;
-	}
-	return 0;
-}
-
-int DataBuffer::writeTail(unsigned int sz){
-	return 0;
-}
-
-int DataBuffer::writeData(char *data, int sz){
-	if (data == NULL || sz == 0){
-		return 0;
-	}
-
-	return sz;
-}
-
-DecryptWrapper::DecryptWrapper() : DataBuffer(),  mParser(NULL) , mRingBuffer(NULL){
-	mOutputData = new char[1024 * 1024 * 8];
 }
 
 DecryptWrapper::~DecryptWrapper(void){
-	if (mOutputData != NULL){
-		delete []mOutputData;
-	}
-
 	if (mRingBuffer != NULL){
 		delete mRingBuffer;
 	}
 }
 
-DWORD WINAPI decryptThread(void *param){
+void decryptThread(void *param){
 	DecryptWrapper *dec = (DecryptWrapper *)param;
 	if (dec == NULL){
-		return 0;
+		return;
 	}
 
 	int nBufSize = dec->getBufferSize();
@@ -87,66 +59,80 @@ DWORD WINAPI decryptThread(void *param){
 	}
 	dec->getParser()->setParseEnd(true);
 
-	return 0;
+	printf("decryptThread Finished \n");
 }
 
-DWORD WINAPI saveDiskThread(void *param){
+void saveDiskThread(void *param){
 	DecryptWrapper *dec = (DecryptWrapper *)param;
 	if (dec == NULL) {
-		return 0;
+		return;
 	}
 	FlvFormatParser *parser = dec->getParser();
 	if (parser == NULL){
-		return 0;
+		return;
 	}
 
 	bool initHeader = false;
 
-	while(true){
+	while (true){
 		if (!initHeader){
 			FlvHeader* header = parser->getFlvHeader();
 			if (header != NULL){
 				dec->writeData((char *)header->pFlvHeader, header->nHeadSize);
 				initHeader = true;
-			} else {
-				Sleep(100);
+			}
+			else {
+				Sleep(10);
 				continue;
 			}
-		} else {
+		}
+		else {
 			Tag *cur = parser->getTag();
 			if (cur != NULL){
 				parser->saveTagToRingBuffer(cur, dec->getRingBuffer());
-			} else {
+			}
+			else {
 				if (parser->isParserEnd()){
 					dec->writeTail(parser->getLastTagSize());
 					dec->getRingBuffer()->setEnded(true);
-					//dec->getRingBuffer()->dumpToFile();
+					printf("save all data \n");
 					break;
 				}
 				else {
-					Sleep(100);
+					Sleep(10);
 				}
-				
+
 			}
 		}
 	}
 
-	return 0;
+	printf("saveDiskThread Finished \n");
 }
 
-int DecryptWrapper::init(const char *srcFile, const char *destFile){
-	DataBuffer::init(srcFile, destFile);
+bool DecryptWrapper::init(const char *srcFile, const char *destFile){
+	if (srcFile == NULL){
+		return false;
+	}
+	
+	mSrcPath = srcFile;
+	if (destFile != NULL){
+		mDestPath = destFile;
+	}
+
 	mParser = new FlvFormatParser(2);
+	mRingBuffer = new RingBuffer(1024 * 1024 * 2);
+	mDecThread = new thread(decryptThread, this);
+	mDecThread->detach();
 
-	mRingBuffer = new RingBuffer(1024 * 1024 * 4);
+	mSaveThrad = new thread(saveDiskThread, this);
+	mSaveThrad->detach();
 
-	CreateThread(NULL, 0, decryptThread, this, 0, NULL);
-	CreateThread(NULL, 0, saveDiskThread, this, 0, NULL);
-	return 1;
+	return true;
 }
 
 int DecryptWrapper::getData(char *buffer, int bufSize){
 	if (mParser == NULL || bufSize <= 0 || buffer == NULL){
+		printf("getData[%d] \n", 0);
 		return 0;
 	}
 
@@ -159,11 +145,13 @@ int DecryptWrapper::getData(char *buffer, int bufSize){
 		}
 	}
 	
+	printf("getData[%d] \n", readSz);
 	return readSz;
 }
 
 int DecryptWrapper::writeData(char *data, int sz){
 	if (data == NULL || sz == 0){
+		printf("writeData:%s \n", 0);
 		return 0;
 	}
 	int saveSize = 0;
@@ -172,12 +160,13 @@ int DecryptWrapper::writeData(char *data, int sz){
 	{
 		int s = mRingBuffer->writeData(data, sz);
 		if (s == 0){
-			Sleep(100);
+			Sleep(10);
 		}
 		saveSize += s;
 	}
 
-	return sz;
+	printf("writeData:%d \n", saveSize);
+	return saveSize;
 }
 
 int DecryptWrapper::writeTail(unsigned int sz){

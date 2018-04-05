@@ -44,6 +44,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	file.close();
+
+	getchar();
 	return 0;
 }
 
