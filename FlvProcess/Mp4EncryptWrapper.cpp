@@ -1,15 +1,11 @@
 #include "stdafx.h"
 #include "Mp4EncryptWrapper.h"
 
-unsigned char mpKey[] = "gonggonggonggong";
-Mp4EncryptWrapper::Mp4EncryptWrapper() : mParser(NULL), mSrcFile(NULL), mOutFile(NULL), mAes(NULL){
+Mp4EncryptWrapper::Mp4EncryptWrapper(AES *aes) : mParser(NULL), mSrcFile(NULL), mOutFile(NULL), mAes(aes){
 }
 Mp4EncryptWrapper::~Mp4EncryptWrapper(){
 	if (mParser != NULL){
 		delete mParser;
-	}
-	if (mAes != NULL){
-		delete mAes;
 	}
 
 	if (mOutFile != NULL){
@@ -32,8 +28,6 @@ bool Mp4EncryptWrapper::init(const char *srcFile, const char *destFile){
 	}
 	mParser->init(srcFile)
 		;
-	mAes = new AES(mpKey);
-
 	mSrcFile = fopen(srcFile, "rb");
 	if (mSrcFile == NULL){
 		return false;

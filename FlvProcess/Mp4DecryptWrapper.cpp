@@ -1,9 +1,7 @@
 #include "stdafx.h"
 #include "Mp4DecryptWrapper.h"
 
-#define RELEASE_POINTER(ptr) if (ptr != NULL) { delete ptr; ptr = NULL; }
-#define CLOSE_FILE(file) if (file != NULL) { fclose(file); file = NULL; }
-Mp4DecryptWrapper::Mp4DecryptWrapper() : mParser(NULL), mRingBuffer(NULL), mThreadObj(NULL){
+Mp4DecryptWrapper::Mp4DecryptWrapper(AES *aes) : mParser(NULL), mRingBuffer(NULL), mThreadObj(NULL), mAes(aes){
 }
 
 Mp4DecryptWrapper::~Mp4DecryptWrapper(){
@@ -27,9 +25,6 @@ bool Mp4DecryptWrapper::init(const char *srcFile, const char *destFile){
 
 	mParser = new Mp4Parser();
 	mParser->init(srcFile);
-
-	unsigned char mpKey[] = "gonggonggonggong";
-	mAes = new AES(mpKey);
 
 	mInputFile = fopen(srcFile, "rb");
 	if (mInputFile == NULL){

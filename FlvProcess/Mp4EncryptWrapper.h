@@ -12,7 +12,7 @@ date:2018-04-05 23:07
 class Mp4EncryptWrapper
 {
 public:
-	Mp4EncryptWrapper();
+	Mp4EncryptWrapper(AES *aes);
 	~Mp4EncryptWrapper();
 
 	bool init(const char *srcFile, const char *destFile);

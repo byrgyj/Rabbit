@@ -11,9 +11,16 @@ DecryptWrapper *decWrapper = NULL;
 
 Mp4EncryptWrapper *mp4EncWrapper = NULL;
 Mp4DecryptWrapper *mp4DecWrapper = NULL;
+AES				  *gAes = NULL;
 int gType = 0;
+
+unsigned char aesKey[] = "gonggonggonggong";
 bool init(int type, const char *srcFile, const char *destFile){
 	gType = type;
+	if (gAes == NULL){
+		gAes = new AES(aesKey);
+	}
+
 	if (type == Oper_Encrypt_Flv){
 		encWrapper = new EncryptWrapper();
 		return encWrapper->init(srcFile, destFile);
@@ -22,11 +29,11 @@ bool init(int type, const char *srcFile, const char *destFile){
 		return decWrapper->init(srcFile, destFile);
 	}
 	else if (type == Oper_Encrypt_Mp4){
-		mp4EncWrapper = new Mp4EncryptWrapper();
+		mp4EncWrapper = new Mp4EncryptWrapper(gAes);
 		return mp4EncWrapper->init(srcFile, destFile);
 	}
 	else if (type == Oper_Decrypt_Mp4) {
-		mp4DecWrapper = new Mp4DecryptWrapper();
+		mp4DecWrapper = new Mp4DecryptWrapper(gAes);
 		return mp4DecWrapper->init(srcFile, destFile);
 	}
 
