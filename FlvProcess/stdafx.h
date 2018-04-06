@@ -11,6 +11,6 @@
 // Windows Header Files:
 #include <windows.h>
 
-
+enum OperationMode { Oper_Normal, Oper_Encrypt_Flv, Oper_Decrypt_Flv, Oper_Encrypt_Mp4, Oper_Decrypt_Mp4 };
 
 // TODO: reference additional headers your program requires here

@@ -11,7 +11,6 @@ using namespace std;
 
 typedef unsigned long long uint64_t;
 
-enum OperationMode { Oper_Normal, Oper_Encrypt, Oper_Decrypt };
 typedef struct FlvHeader_s
 {
 	int nVersion;

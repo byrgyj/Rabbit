@@ -86,9 +86,12 @@ int RingBuffer::readData(char *buffer, int size){
 	return 0;
 }
 
-void RingBuffer::dumpToFile(){
-	std::fstream file("dec_rb.flv", std::ios_base::out | std::ios_base::binary);
+void RingBuffer::dumpToFile(const char *filePath){
+	if (filePath == NULL){
+		return;
+	}
 
+	std::fstream file(filePath, std::ios_base::out | std::ios_base::binary);
 	file.write(mDataBuffer, mWriteIndex);
 
 	file.close();

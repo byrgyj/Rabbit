@@ -162,7 +162,7 @@ int FlvFormatParser::DumpFlv(const std::string &path)
 			int keyFrame = (((*it_tag)->_pTagData[0]) >> 4) & 0xF;		
 			CVideoTag *vTag = (CVideoTag*)*it_tag;
 			if (keyFrame == 1){
-				if (mOperation == Oper_Encrypt){
+				if (mOperation == Oper_Encrypt_Flv){
 					int outSize = 0;
 					unsigned char *encData = NULL;
 					EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
@@ -174,7 +174,7 @@ int FlvFormatParser::DumpFlv(const std::string &path)
 						delete[]vTag->_pTagData;
 					}
 					vTag->_pTagData = encData;
-				} else if (mOperation == Oper_Decrypt){
+				} else if (mOperation == Oper_Decrypt_Flv){
 					unsigned char *decData = NULL;
 					int decSize = 0;
 					DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
@@ -335,7 +335,7 @@ int FlvFormatParser::saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer){
 		int keyFrame = ((tag->_pTagData[0]) >> 4) & 0xF;
 		CVideoTag *vTag = (CVideoTag*)tag;
 		if (keyFrame == 1){
-			if (mOperation == Oper_Encrypt){
+			if (mOperation == Oper_Encrypt_Flv){
 				int outSize = 0;
 				unsigned char *encData = NULL;
 				EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
@@ -348,7 +348,7 @@ int FlvFormatParser::saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer){
 				}
 				vTag->_pTagData = encData;
 			}
-			else if (mOperation == Oper_Decrypt){
+			else if (mOperation == Oper_Decrypt_Flv){
 				unsigned char *decData = NULL;
 				int decSize = 0;
 				DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
@@ -469,7 +469,7 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 		int keyFrame = ((tag->_pTagData[0]) >> 4) & 0xF;		
 		CVideoTag *vTag = (CVideoTag*)tag;
 		if (keyFrame == 1){
-			if (mOperation == Oper_Encrypt){
+			if (mOperation == Oper_Encrypt_Flv){
 				int outSize = 0;
 				unsigned char *encData = NULL;
 				EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
@@ -481,7 +481,7 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 					delete[]vTag->_pTagData;
 				}
 				vTag->_pTagData = encData;
-			} else if (mOperation == Oper_Decrypt){
+			} else if (mOperation == Oper_Decrypt_Flv){
 				unsigned char *decData = NULL;
 				int decSize = 0;
 				DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
@@ -879,7 +879,7 @@ int FlvFormatParser::CVideoTag::ParseH264Tag(FlvFormatParser *pParser)
 	}
 	else if (nAVCPacketType == 1)
 	{
-		if (mOperation == Oper_Normal || mOperation == Oper_Encrypt){
+		if (mOperation == Oper_Normal || mOperation == Oper_Encrypt_Flv){
 			ParseNalu(pParser, pd);
 		}		
 	}

@@ -16,6 +16,7 @@ extern "C" DLL_API int encryptFlvFile();
 extern "C" DLL_API int decryptFlvData(const char *srcBuffer, int srcBufferSize, const char *destData, int destDataSize);
 
 extern "C" DLL_API int comsumeFlvData(char *buffer, int dataSize);
+extern "C" DLL_API int consumeMp4Data(char *buffer, int dataSize);
 
 #ifdef __cplusplus  
 }

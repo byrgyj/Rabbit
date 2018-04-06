@@ -25,6 +25,8 @@ uint32_t Mp4DataBuffer::readData(void *buf, uint32_t size)
 	memcpy(buf, mData+mCurrentIndex, size);
 
 	mCurrentIndex += size;
+
+	return size;
 }
 void Mp4DataBuffer::appendData(uint8_t *buf, uint32_t size)
 {

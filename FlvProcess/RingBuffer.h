@@ -14,7 +14,7 @@ public :
 	void setEnded(bool flag) { mWriteEnded = flag; }
 	bool isEnded() { return mWriteEnded;}
 
-	void dumpToFile();
+	void dumpToFile(const char *filePath);
 private:
 	std::mutex mMutex;
 	std::condition_variable mCondition;
