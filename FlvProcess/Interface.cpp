@@ -81,3 +81,7 @@ int consumeMp4Data(char *buffer, int dataSize){
 
 	return mp4DecWrapper->getData(buffer, dataSize);
 }
+
+bool seekTo(int millsec){
+	return true;
+}

@@ -17,7 +17,7 @@ DataBuffer::~DataBuffer() {
 	}
 }
 
-DecryptWrapper::DecryptWrapper() : DataBuffer(),  mParser(NULL) , mRingBuffer(NULL), mSaveThrad(NULL), mDecThread(NULL){
+DecryptWrapper::DecryptWrapper() : DataBuffer(), mParser(NULL), mRingBuffer(NULL), mSaveThrad(NULL), mDecThread(NULL), mTimeKeyInfo(NULL), mReadBeginPos(0){
 
 }
 
@@ -32,6 +32,8 @@ void decryptThread(void *param){
 	if (dec == NULL){
 		return;
 	}
+
+	dec->mTimeKeyInfo = dec->parseKeyInfo();
 
 	int nBufSize = dec->getBufferSize();
 	std::string srcFile = dec->getSrcPath();
@@ -168,9 +170,50 @@ int DecryptWrapper::writeData(char *data, int sz){
 	printf("writeData:%d \n", saveSize);
 	return saveSize;
 }
+bool DecryptWrapper::seekTo(int millsec){
+	if (mTimeKeyInfo == NULL){
+		return false;
+	}
+
+	// TODO
+	for (int i = 0; i < mTimeKeyInfo->size(); i++){
+		if (millsec <= mTimeKeyInfo->at(i)->time){
+			mReadBeginPos = mTimeKeyInfo->at(i)->offset;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 
 int DecryptWrapper::writeTail(unsigned int sz){
 	unsigned int nn = WriteU32(sz);
 	mRingBuffer->writeData((char*)&nn, 4);
 	return 0;
+}
+
+std::vector<TimeToOffset*> * DecryptWrapper::parseKeyInfo(){
+	FILE *file = fopen(mSrcPath.c_str(), "rb");
+	if (file == NULL){
+		return NULL;
+	}
+
+	std::vector<TimeToOffset*> *vec = NULL;
+	fseek(file, -4, SEEK_END);
+
+	unsigned char szValidateSize[4] = { 0 };
+	fread(szValidateSize, 1, 4, file);
+	int dataSize = HexToValue(szValidateSize);
+	if (dataSize > 0){
+		unsigned char * data = new unsigned char[dataSize];
+		if (data != NULL){
+			fseek(file, 0 - dataSize - 4, SEEK_END);
+			fread(data, 1, dataSize, file);
+			vec = mParser->parserKeyFrameInfo(data, dataSize);
+			delete data;
+		}	
+	}	
+	fclose(file);
+	return vec;
 }

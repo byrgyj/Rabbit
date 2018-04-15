@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Aes.h" />
+    <ClInclude Include="BaseInterface.h" />
     <ClInclude Include="DecryptWrapper.h" />
     <ClInclude Include="EncryptWrapper.h" />
     <ClInclude Include="FlvFormatParser.h" />
@@ -93,6 +94,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Aes.cpp" />
+    <ClCompile Include="BaseInterface.cpp" />
     <ClCompile Include="DecryptWrapper.cpp" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>

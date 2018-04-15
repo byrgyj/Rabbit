@@ -121,6 +121,8 @@ int EncryptWrapper::writeTail(unsigned int sz){
 	unsigned int nn = WriteU32(sz);
 	mFile->write((char *)&nn, 4);
 
+	mParser->saveKeyFrameInfo(mFile);
+
 	mFile->close();
 	return 0;
 }

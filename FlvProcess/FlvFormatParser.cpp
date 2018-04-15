@@ -72,6 +72,7 @@ int FlvFormatParser::Parse(unsigned char *pBuf, int nBufSize, int &nUsedLen)
 			nOffset -= 4;
 			break;
 		}
+		pTag->_header.nByteOffset = nOffset;
 		nOffset += (11 + pTag->_header.nDataSize);
 
 		mTagIndex++;
@@ -432,7 +433,60 @@ int FlvFormatParser::saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer){
 
 	return writeSize;
 }
+void FlvFormatParser::saveKeyFrameInfo(fstream *file){
+	if (mTimeToOffset.empty() || file == NULL){
+		return;
+	}
 
+	char tagHeader[11] = { 0 };
+	tagHeader[0] = 0x0A;
+
+	int dataSize = mTimeToOffset.size() * 8;
+	ConvertToHex((unsigned char*)(tagHeader + 1), dataSize);
+	file->write(tagHeader, 11);
+
+	for (int i = 0; i < mTimeToOffset.size(); i++){
+		TimeToOffset *to = mTimeToOffset[i];
+		unsigned char time[4] = { 0 };
+		unsigned char offset[4] = { 0 };
+		ConvertToHex4(time, to->time);
+		ConvertToHex4(offset, to->offset);
+		file->write((char*)time, 4);
+		file->write((char*)offset, 4);
+		delete to;
+	}
+
+	unsigned int tagSize = WriteU32(dataSize + 11);
+	file->write((char*)&tagSize, 4);
+
+
+}
+
+std::vector<TimeToOffset*> *FlvFormatParser::parserKeyFrameInfo(unsigned char *data, int dataSize){
+	if (data == NULL || dataSize < 11){
+		return NULL;
+	}
+	
+	int index = 0;
+	if (data[index] != 0x0A){
+		return NULL;
+	}
+
+	std::vector<TimeToOffset*> *vec = new std::vector<TimeToOffset*>;
+	index += 11;
+	while (index < dataSize) {
+		int time = HexToValue(data + index);
+		index += 4;
+		int offset = HexToValue(data + index);
+
+		vec->push_back(new TimeToOffset(time, offset));
+		index += 4;
+	};
+
+	
+	return vec;
+
+}
 
 int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 	unsigned int nn = WriteU32(nLastTagSize);
@@ -447,6 +501,7 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 				int outSize = 0;
 				unsigned char *encData = NULL;
 				EncryptData(vTag->_pTagData, vTag->_header.nDataSize);
+				mTimeToOffset.push_back(new TimeToOffset(vTag->_header.nTimeStamp, vTag->_header.nByteOffset));
 
 			} else if (mOperation == Oper_Decrypt_Flv){
 				unsigned char *decData = NULL;

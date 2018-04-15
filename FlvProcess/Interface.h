@@ -17,6 +17,8 @@ extern "C" DLL_API int decryptFlvData(const char *srcBuffer, int srcBufferSize, 
 
 extern "C" DLL_API int comsumeFlvData(char *buffer, int dataSize);
 extern "C" DLL_API int consumeMp4Data(char *buffer, int dataSize);
+extern "C" DLL_API bool seekTo(int millsec);
+
 
 #ifdef __cplusplus  
 }

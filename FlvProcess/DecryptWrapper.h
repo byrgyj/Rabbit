@@ -3,6 +3,7 @@
 #include <fstream>
 #include <thread>
 #include "RingBuffer.h"
+#include "BaseInterface.h"
 class DataBuffer {
 public:
 	DataBuffer();
@@ -20,27 +21,34 @@ public:
 	std::string mDestPath;
 	fstream *mOutFile;
 
-
 };
 
-class DecryptWrapper : public DataBuffer
+class DecryptWrapper : public DataBuffer, public BaseInterface
 {
 public:
 	DecryptWrapper();
 	~DecryptWrapper(void);
 
 	bool init(const char *srcFile, const char *destFile);
-	int getData(char *buffer, int bufSize);
+
+	virtual int getData(char *buffer, int bufSize);
 	virtual int writeData(char *data, int sz);
+	virtual bool seekTo(int millsec);
+
 	FlvFormatParser *getParser() { return mParser; }
 	RingBuffer *getRingBuffer() { return mRingBuffer;  }
 
 	int writeTail(unsigned int sz);
+
+	std::vector<TimeToOffset*> *parseKeyInfo();
+	std::vector<TimeToOffset*> *mTimeKeyInfo;
 private:
 	FlvFormatParser *mParser;
 	RingBuffer *mRingBuffer;
 
 	thread *mDecThread;
 	thread *mSaveThrad;
+
+	int mReadBeginPos;
 };
 

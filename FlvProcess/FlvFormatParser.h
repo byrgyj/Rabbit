@@ -11,6 +11,13 @@ using namespace std;
 
 typedef unsigned long long uint64_t;
 
+struct TimeToOffset{
+	TimeToOffset() :time(0), offset(0){}
+	TimeToOffset(int tm, int off) : time(tm), offset(off){}
+	int time;
+	int offset;
+};
+
 typedef struct FlvHeader_s
 {
 	int nVersion;
@@ -26,10 +33,11 @@ struct TagHeader
 	int nTimeStamp;
 	int nTSEx;
 	int nStreamID;
+	int nByteOffset;
 
 	unsigned int nTotalTS;
 
-	TagHeader() : nType(0), nDataSize(0), nTimeStamp(0), nTSEx(0), nStreamID(0), nTotalTS(0) {}
+	TagHeader() : nType(0), nDataSize(0), nTimeStamp(0), nTSEx(0), nStreamID(0), nTotalTS(0), nByteOffset(0){}
 	~TagHeader() {}
 };
 class Tag
@@ -72,6 +80,24 @@ static void ConvertToHex(unsigned char *dest, unsigned int value){
 	dest[1] = p[1];
 	dest[2] = p[0];
 }
+static void ConvertToHex4(unsigned char *dest, unsigned int value){
+	unsigned char *p = (unsigned char *)&value;
+	dest[0] = p[3];
+	dest[1] = p[2];
+	dest[2] = p[1];
+	dest[3] = p[0];
+}
+
+static int HexToValue(unsigned char *dest){
+	unsigned int value = 0;
+	unsigned char *p = (unsigned char *)&value;
+	p[0] = dest[3];
+	p[1] = dest[2];
+	p[2] = dest[1];
+	p[3] = dest[0];
+
+	return value;
+}
 
 class FlvFormatParser
 {
@@ -92,6 +118,9 @@ public:
 	int writeTail(fstream *f);
 
 	int saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer);
+	void saveKeyFrameInfo(fstream *file);
+
+	std::vector<TimeToOffset*> *parserKeyFrameInfo(unsigned char *data, int dataSize);
 
 	bool EncryptData(unsigned char *pVideoData, int videoDataSize);
 	bool DecryptData(unsigned char *pVideoData, int videoDataSize);
@@ -162,6 +191,7 @@ private:
 
 	FlvHeader* _pFlvHeader;
 	//vector<Tag *> _vpTag;
+	vector<TimeToOffset*> mTimeToOffset;
 	list<Tag *> _vpTag;
 	FlvStat _sStat;
 	AES *mAes;
