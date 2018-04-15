@@ -24,6 +24,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 
 	bool bInit = init(1, "ffd5.f4v", "enc.flv");
+	char *srcFile = "moov_befor_mdat.mp4";
+	//char *srcFile = "out_ffd5.mp4";
+	//bool bInit = init(3, srcFile, "enc.mp4");
 	if (!bInit){
 		return -1;
 	}

@@ -699,9 +699,9 @@ mp4_minf_box Mp4Parser::mp4ReadMinfBox(int size)
     int level_5_box_size = 0;
 	int cur_pos = mAudioData->getCurrentIndex();
 
-    if (minfNeedToOffset(cur_pos)){
-		cur_pos += 1;
-	}
+//     if (minfNeedToOffset(cur_pos)){
+// 		cur_pos += 1;
+// 	}
 
 
     do{

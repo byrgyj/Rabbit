@@ -163,27 +163,13 @@ int FlvFormatParser::DumpFlv(const std::string &path)
 			CVideoTag *vTag = (CVideoTag*)*it_tag;
 			if (keyFrame == 1){
 				if (mOperation == Oper_Encrypt_Flv){
-					int outSize = 0;
-					unsigned char *encData = NULL;
-					EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
+					EncryptData(vTag->_pTagData, vTag->_header.nDataSize);
 
-					vTag->_header.nDataSize = outSize;
-
-					ConvertToHex(vTag->_pTagHeader + 1, outSize);
-					if (vTag->_pTagData != NULL){
-						delete[]vTag->_pTagData;
-					}
-					vTag->_pTagData = encData;
 				} else if (mOperation == Oper_Decrypt_Flv){
 					unsigned char *decData = NULL;
 					int decSize = 0;
-					DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
-					vTag->_header.nDataSize = decSize;
-					ConvertToHex(vTag->_pTagHeader + 1, decSize);
-					if (vTag->_pTagData != NULL){
-						delete[]vTag->_pTagData;
-					}
-					vTag->_pTagData = decData;
+					DecryptData(vTag->_pTagData, vTag->_header.nDataSize);
+
 				}
 			}
 			
@@ -338,26 +324,14 @@ int FlvFormatParser::saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer){
 			if (mOperation == Oper_Encrypt_Flv){
 				int outSize = 0;
 				unsigned char *encData = NULL;
-				EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
+				EncryptData(vTag->_pTagData, vTag->_header.nDataSize);
 
-				vTag->_header.nDataSize = outSize;
-
-				ConvertToHex(vTag->_pTagHeader + 1, outSize);
-				if (vTag->_pTagData != NULL){
-					delete[]vTag->_pTagData;
-				}
-				vTag->_pTagData = encData;
 			}
 			else if (mOperation == Oper_Decrypt_Flv){
 				unsigned char *decData = NULL;
 				int decSize = 0;
-				DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
-				vTag->_header.nDataSize = decSize;
-				ConvertToHex(vTag->_pTagHeader + 1, decSize);
-				if (vTag->_pTagData != NULL){
-					delete[]vTag->_pTagData;
-				}
-				vTag->_pTagData = decData;
+				DecryptData(vTag->_pTagData, vTag->_header.nDataSize);
+
 			}
 		}
 
@@ -472,25 +446,13 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 			if (mOperation == Oper_Encrypt_Flv){
 				int outSize = 0;
 				unsigned char *encData = NULL;
-				EncryptData(vTag->_pTagData, vTag->_header.nDataSize, &encData, outSize);
+				EncryptData(vTag->_pTagData, vTag->_header.nDataSize);
 
-				vTag->_header.nDataSize = outSize;
-
-				ConvertToHex(vTag->_pTagHeader + 1, outSize);
-				if (vTag->_pTagData != NULL){
-					delete[]vTag->_pTagData;
-				}
-				vTag->_pTagData = encData;
 			} else if (mOperation == Oper_Decrypt_Flv){
 				unsigned char *decData = NULL;
 				int decSize = 0;
-				DecryptData(vTag->_pTagData, vTag->_header.nDataSize, &decData, decSize);
-				vTag->_header.nDataSize = decSize;
-				ConvertToHex(vTag->_pTagHeader + 1, decSize);
-				if (vTag->_pTagData != NULL){
-					delete[]vTag->_pTagData;
-				}
-				vTag->_pTagData = decData;
+				DecryptData(vTag->_pTagData, vTag->_header.nDataSize);
+
 			}
 		}
 			
@@ -591,8 +553,7 @@ int FlvFormatParser::writeTag(fstream *f, Tag *tag){
 }
 
 
-bool FlvFormatParser::EncryptData(unsigned char *pVideoData, int srcSize, unsigned char **encryptedData, int &encryptedSize)
-{
+bool FlvFormatParser::EncryptData(unsigned char *pVideoData, int srcSize){
 	if (pVideoData == NULL || srcSize <= 0){
 		return false;
 	}
@@ -602,53 +563,29 @@ bool FlvFormatParser::EncryptData(unsigned char *pVideoData, int srcSize, unsign
 	int supplymentSize = videoDataSize % 16;
 	unsigned char *cur = NULL;
 
-	if (supplymentSize != 0){
-		encryptedSize = srcSize + 16 - supplymentSize + 1;
-		*encryptedData = new unsigned char[encryptedSize];
-		cur = *encryptedData;
-		memcpy(cur, pVideoData, 2);
-		cur[2] = 16 - supplymentSize;
-		memcpy(cur + 3, pVideoData + 2, srcSize - 2);
-
-		unsigned char *p = new unsigned char();
-		*p = 0x00;
-
-		for (int i = 0; i < 16 - supplymentSize; i++){
-			memcpy(cur + srcSize + 1 + i, p, 1);
-		}
+	videoDataSize = supplymentSize == 0 ? videoDataSize : videoDataSize - supplymentSize;
+	if (videoDataSize > 0){
+		(unsigned char*)mAes->encryptData(pVideoData + 2, videoDataSize);
+		return true;
 	}
 	else {
-		encryptedSize = srcSize + 1;
-		*encryptedData = new unsigned char [encryptedSize];
-		cur = *encryptedData;
-		memcpy(cur, pVideoData, 2);
-		cur[2] = 0;
-		memcpy(cur + 3, pVideoData + 2, srcSize - 2);
+		return false;
 	}
-
-    (unsigned char*)mAes->encryptData(cur + 3, encryptedSize - 3);
-
-
-	return true;
 }
-bool FlvFormatParser::DecryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **decryptedData, int &decryptedSize){
+bool FlvFormatParser::DecryptData(unsigned char *pVideoData, int videoDataSize){
 	if (pVideoData == NULL || videoDataSize <= 0){
 		return false;
 	}
 
-	int supplimentSize = (int)pVideoData[2];
-
-	*decryptedData = new unsigned char[videoDataSize - 1 - supplimentSize];
-	unsigned char *cur = *decryptedData;
-
-	memcpy(cur, pVideoData , 2);
-
-	mAes->decryptData(pVideoData + 3, videoDataSize - 3);
-
-	memcpy(cur + 2, pVideoData + 3, videoDataSize - 3 - supplimentSize);
-	decryptedSize = videoDataSize - 1 - supplimentSize;
-
-	return true;
+	int validateSize = videoDataSize - 2;
+	int supplymentSize = validateSize % 16;
+	validateSize = supplymentSize == 0 ? validateSize : validateSize - supplymentSize;
+	if (validateSize > 0){
+		mAes->decryptData(pVideoData + 2, videoDataSize);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 int FlvFormatParser::Stat()

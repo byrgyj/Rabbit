@@ -93,8 +93,8 @@ public:
 
 	int saveTagToRingBuffer(Tag *tag, RingBuffer *ringBuffer);
 
-	bool EncryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **encryptedData, int &encryptedSize);
-	bool DecryptData(unsigned char *pVideoData, int videoDataSize, unsigned char **decryptedData, int &decryptedSize);
+	bool EncryptData(unsigned char *pVideoData, int videoDataSize);
+	bool DecryptData(unsigned char *pVideoData, int videoDataSize);
 
 private:
 	class CVideoTag : public Tag
