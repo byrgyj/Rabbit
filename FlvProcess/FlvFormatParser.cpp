@@ -29,8 +29,8 @@ FlvFormatParser::FlvFormatParser(int operation) : mTagIndex(0), mOperation(opera
     _pFlvHeader = NULL;
 	mAes = new AES(key);
 
-	mMutex = CreateMutex(NULL, false, NULL);
-	mEvent = CreateEvent(NULL, true, true, NULL);
+//	mMutex = CreateMutex(NULL, false, NULL);
+//	mEvent = CreateEvent(NULL, true, true, NULL);
 }
 
 FlvFormatParser::~FlvFormatParser()
@@ -76,9 +76,15 @@ int FlvFormatParser::Parse(unsigned char *pBuf, int nBufSize, int &nUsedLen)
 		nOffset += (11 + pTag->_header.nDataSize);
 
 		mTagIndex++;
-		WaitForSingleObject(mEvent, INFINITE);
+
+		std::unique_lock<std::mutex> locker(mStdMutex);
+		if (_vpTag.size() > 2){
+			printf("wait to push tag ... \n");
+			mCondition.wait(locker);
+			printf("wait to push tag end \n");
+		}
 		_vpTag.push_back(pTag);
-		SetEvent(mEvent);
+		mCondition.notify_all();
 	}
 
 	nUsedLen = nOffset;
@@ -294,16 +300,25 @@ int FlvFormatParser::DumpFlv(const std::string &path)
 
 
 Tag *FlvFormatParser::getTag(){
-	WaitForSingleObject(mEvent, INFINITE);
+	std::unique_lock<std::mutex> locker(mStdMutex);
 	if (_vpTag.empty()){
-		return NULL;
-	} else {
+		if (mParserEnd){
+			return NULL;
+		} else {
+			printf("wait for tag ... \n");
+			mCondition.wait(locker);
+			printf("wait for tag end ... \n");
+		}
+	} 
+
+	if (!_vpTag.empty()){
 		Tag *cur = _vpTag.front();
 		_vpTag.pop_front();
-
-		SetEvent(mEvent);
+		mCondition.notify_all();
 		return cur;
 	}
+
+	return NULL;
 }
 int FlvFormatParser::writeTail(fstream *f){
 	unsigned int nn = WriteU32(nLastTagSize);

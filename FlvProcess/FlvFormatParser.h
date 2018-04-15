@@ -185,18 +185,19 @@ private:
 
 public:
 	bool isParserEnd() { return mParserEnd; }
-	void setParseEnd(bool flag) { mParserEnd = flag; }
+	void setParseEnd(bool flag) { mParserEnd = flag; mCondition.notify_all(); }
 	unsigned int getLastTagSize() { return nLastTagSize; }
 private:
 
 	FlvHeader* _pFlvHeader;
-	//vector<Tag *> _vpTag;
 	vector<TimeToOffset*> mTimeToOffset;
 	list<Tag *> _vpTag;
 	FlvStat _sStat;
 	AES *mAes;
-	HANDLE mMutex;
-	HANDLE mEvent;
+
+
+	std::mutex mStdMutex;
+	std::condition_variable mCondition;
 
 
 	// H.264

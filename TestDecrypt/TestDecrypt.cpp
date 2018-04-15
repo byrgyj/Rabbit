@@ -14,15 +14,18 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	typedef bool(*apiInit)(int, const char *, const char *);
 	typedef int(*apiComsumeFlvData)(char *, int);
+	typedef int(*apiSeekTo)(int milslec);
 
 	apiInit init = NULL;
 	apiComsumeFlvData consumeData = NULL;
+	apiSeekTo seekTo = NULL;
 
 	init = (apiInit)GetProcAddress(dll, "init");
 	//consumeData = (apiComsumeFlvData)GetProcAddress(dll, "consumeMp4Data");
 	consumeData = (apiComsumeFlvData)GetProcAddress(dll, "comsumeFlvData");
+	seekTo = (apiSeekTo)GetProcAddress(dll, "seekTo");
 
-	if (init == NULL || consumeData == NULL){
+	if (init == NULL || consumeData == NULL || seekTo == NULL){
 		return 0;
 	}
 
@@ -35,14 +38,19 @@ int _tmain(int argc, _TCHAR* argv[])
 	int readSz = 0;
 
 	std::fstream file("enc_to_dec.flv", std::ios_base::out | std::ios_base::binary);
+	bool seek = false;
 	while (true){
 		memset(szBuffer, 0, 512);
-		//printf("getData ...\n");
 		int sz = consumeData(szBuffer, 512);
 		if (sz == 0){
 			break;
 		}
 		readSz += sz;
+
+// 		if (!seek && readSz >= 512){
+// 			seek = true;
+// 			seekTo(10000);
+// 		}
 		//printf("getData end [%d, %d]\n", sz, readSz);
 		file.write(szBuffer, sz);
 	}

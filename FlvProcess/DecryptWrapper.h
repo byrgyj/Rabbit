@@ -37,6 +37,7 @@ public:
 
 	FlvFormatParser *getParser() { return mParser; }
 	RingBuffer *getRingBuffer() { return mRingBuffer;  }
+	int getSeekPosition() { return mSeekPosition;  }
 
 	int writeTail(unsigned int sz);
 
@@ -49,6 +50,6 @@ private:
 	thread *mDecThread;
 	thread *mSaveThrad;
 
-	int mReadBeginPos;
+	int mSeekPosition;
 };
 

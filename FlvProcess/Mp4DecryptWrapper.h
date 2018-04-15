@@ -9,15 +9,18 @@ date:2018-04-06 16:00
 #include "Mp4Parser.h"
 #include <thread>
 #include "Aes.h"
-class Mp4DecryptWrapper
+#include "BaseInterface.h"
+class Mp4DecryptWrapper : public BaseInterface
 {
 public:
 	Mp4DecryptWrapper(AES *aes);
 	~Mp4DecryptWrapper();
 
 	bool init(const char *srcFile, const char *destFile);
-	int getData(char *buffer, int bufSize);
-	int writeData(char *data, int sz);
+
+	virtual bool seekTo(int millsec);
+	virtual int getData(char *buffer, int bufSize);
+	virtual int writeData(char *data, int sz);
 
 
 	Mp4Parser *getParser() { return mParser;  }

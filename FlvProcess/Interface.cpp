@@ -83,5 +83,5 @@ int consumeMp4Data(char *buffer, int dataSize){
 }
 
 bool seekTo(int millsec){
-	return true;
+	return decWrapper->seekTo(millsec);
 }

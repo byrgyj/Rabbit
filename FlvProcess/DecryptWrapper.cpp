@@ -17,7 +17,7 @@ DataBuffer::~DataBuffer() {
 	}
 }
 
-DecryptWrapper::DecryptWrapper() : DataBuffer(), mParser(NULL), mRingBuffer(NULL), mSaveThrad(NULL), mDecThread(NULL), mTimeKeyInfo(NULL), mReadBeginPos(0){
+DecryptWrapper::DecryptWrapper() : DataBuffer(), mParser(NULL), mRingBuffer(NULL), mSaveThrad(NULL), mDecThread(NULL), mTimeKeyInfo(NULL), mSeekPosition(0){
 
 }
 
@@ -40,10 +40,25 @@ void decryptThread(void *param){
 	int nFlvPos = 0;
 	fstream fin;
 	fin.open(srcFile.c_str(), ios_base::in | ios_base::binary);
+
+	int lastSeekPos = 0;
 	while (1)
 	{
 		int nReadNum = 0;
 		int nUsedLen = 0;
+
+		if (lastSeekPos != dec->getSeekPosition()){
+			lastSeekPos = dec->getSeekPosition();
+			fin.seekg(lastSeekPos, ios::beg);
+
+			int i = fin.tellg();
+
+			memset(dec->mDataBuf, 0, dec->mDataSize);
+			memset(dec->mDataBak, 0, dec->mDataSize);
+
+			nFlvPos = 0;
+		}
+
 
 		fin.read((char *)dec->mDataBuf + nFlvPos, nBufSize - nFlvPos);
 		nReadNum = fin.gcount();
@@ -60,6 +75,7 @@ void decryptThread(void *param){
 		nFlvPos -= nUsedLen;
 	}
 	dec->getParser()->setParseEnd(true);
+	
 
 	printf("decryptThread Finished \n");
 }
@@ -122,7 +138,7 @@ bool DecryptWrapper::init(const char *srcFile, const char *destFile){
 	}
 
 	mParser = new FlvFormatParser(2);
-	mRingBuffer = new RingBuffer(1024 * 1024 * 2);
+	mRingBuffer = new RingBuffer(1024 * 128);
 	mDecThread = new thread(decryptThread, this);
 	mDecThread->detach();
 
@@ -147,7 +163,7 @@ int DecryptWrapper::getData(char *buffer, int bufSize){
 		}
 	}
 	
-	printf("getData[%d] \n", readSz);
+	//printf("getData[%d] \n", readSz);
 	return readSz;
 }
 
@@ -178,7 +194,7 @@ bool DecryptWrapper::seekTo(int millsec){
 	// TODO
 	for (int i = 0; i < mTimeKeyInfo->size(); i++){
 		if (millsec <= mTimeKeyInfo->at(i)->time){
-			mReadBeginPos = mTimeKeyInfo->at(i)->offset;
+			mSeekPosition = mTimeKeyInfo->at(i)->offset;
 			return true;
 		}
 	}

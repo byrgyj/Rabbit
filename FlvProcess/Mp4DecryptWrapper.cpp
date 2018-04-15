@@ -38,7 +38,10 @@ bool Mp4DecryptWrapper::init(const char *srcFile, const char *destFile){
 
 	return true;
 }
-
+bool Mp4DecryptWrapper::seekTo(int millsec){
+	// TODO 
+	return false;
+}
 int Mp4DecryptWrapper::getData(char *buffer, int bufSize){
 	return mRingBuffer->readData(buffer, bufSize);
 }
