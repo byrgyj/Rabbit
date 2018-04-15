@@ -27,6 +27,7 @@ extern "C"{
 #include <libswresample/swresample.h>
 #include <libswscale/swscale.h>
 #include <libavutil/time.h>
+#include <libavutil\imgutils.h>
 #include <SDL2/SDL.h>
 #include "packet_queue.h"
 /*=========================================================================*\

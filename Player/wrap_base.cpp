@@ -34,11 +34,11 @@ int find_stream_index(AVFormatContext *pformat_ctx, int *video_stream, int *audi
 
      for (i = 0; i < pformat_ctx->nb_streams; i++)
      {
-          if (pformat_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO)
+          if (pformat_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO)
           {
               video_index = i;
           }
-          if (pformat_ctx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+          if (pformat_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO)
           {
               audio_index = i;
           }

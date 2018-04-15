@@ -2,11 +2,16 @@
 #include "stdafx.h"
 
 #include "video.h"
+#include <libavutil\imgutils.h>
 
 int prepare_video(PlayerState *ps)
 {
      ps->pvideo_stream = ps->pformat_ctx->streams[ps->video_stream_index];
-     ps->pvideo_codec_ctx = ps->pvideo_stream->codec;
+     
+	 AVCodec *codec = avcodec_find_decoder(ps->pvideo_stream->codecpar->codec_id);
+	 ps->pvideo_codec_ctx = avcodec_alloc_context3(codec);
+	 avcodec_parameters_to_context(ps->pvideo_codec_ctx, ps->pvideo_stream->codecpar);
+
      ps->pvideo_codec = avcodec_find_decoder(ps->pvideo_codec_ctx->codec_id);
     if (ps->pvideo_codec == NULL)
     {
@@ -37,15 +42,17 @@ int play_video(PlayerState *ps)
 
      //
      ps->video_buf = (uint8_t *)av_malloc(
-              avpicture_get_size(ps->pixfmt,
-                  ps->out_frame.width, ps->out_frame.height)
+		 av_image_get_buffer_size(ps->pixfmt,
+                  ps->out_frame.width, ps->out_frame.height, 1)
              );
-
+	 
      //用av_image_fill_arrays代替。
      //根据所给参数和提供的数据设置data指针和linesizes。
-     avpicture_fill((AVPicture *)&ps->out_frame, ps->video_buf,
-             ps->pixfmt,
-             ps->out_frame.width, ps->out_frame.height);
+     //avpicture_fill((AVPicture *)&ps->out_frame, ps->video_buf,
+     //        ps->pixfmt,
+     //        ps->out_frame.width, ps->out_frame.height);
+
+	 av_image_fill_arrays(ps->out_frame.data, ps->out_frame.linesize, ps->video_buf, ps->pixfmt, ps->out_frame.width, ps->out_frame.height, 1);
 
      //使用sws_scale之前要用这个函数进行相关转换操作。
      //分配和返回一个 SwsContext.
@@ -129,13 +136,13 @@ int decode_and_show(void *arg)
       }
 
 	  int got_picture = 0;
-	  ret = avcodec_decode_video2(ps->pvideo_codec_ctx, pframe, &got_picture, &packet);
-	  if(ret < 0){
-				printf("Decode Error.\n");
-				return -1;
-		}
+// 	  ret = avcodec_decode_video2(ps->pvideo_codec_ctx, pframe, &got_picture, &packet);
+// 	  if(ret < 0){
+// 				printf("Decode Error.\n");
+// 				return -1;
+// 		}
 
-/* 
+
       ret = avcodec_send_packet(ps->pvideo_codec_ctx, &packet);
       if (ret < 0 && ret != AVERROR(EAGAIN) && ret != AVERROR_EOF)
       {
@@ -149,7 +156,6 @@ int decode_and_show(void *arg)
            fprintf(ERR_STREAM, "receive video frame error\n");
            return -1;
       }
-*/
      //下面三句实现音视频同步，还有一句在audio部分。
      //获取pts
      pts = get_frame_pts(ps, pframe);
@@ -249,7 +255,7 @@ double get_audio_clock(PlayerState *ps)
 	double cur_buf_pos = ps->audio_buf_index;
 
 	//每个样本占2bytes。16bit
-	bytes_per_sec = ps->paudio_stream->codec->sample_rate
+	bytes_per_sec = ps->paudio_stream->codecpar->sample_rate
 	 			* ps->paudio_codec_ctx->channels * 2;
 
 	cur_audio_clock = ps->audio_clock +
@@ -287,7 +293,13 @@ double get_frame_pts(PlayerState *ps, AVFrame *pframe)
 	//更新video_clock, 这里不理解
 	//这里用的是AVCodecContext的time_base
 	//extra_delay = repeat_pict / (2*fps), 这个公式是在ffmpeg官网手册看的
-	frame_delay = av_q2d(ps->pvideo_stream->codec->time_base);
+
+
+	AVRational r;
+	r.num = 1;
+	r.den = 50;
+	frame_delay = av_q2d(ps->pvideo_codec_ctx->time_base);
+	frame_delay = av_q2d(r);
 	frame_delay += pframe->repeat_pict / (frame_delay * 2);
 	ps->video_clock += frame_delay;
 

@@ -66,31 +66,34 @@ int readPacket(void *opaque, uint8_t *buf, int buf_size){
 #endif
 }
 
+AVFormatContext *inputFmt = NULL;
 int _tmain(int argc, _TCHAR* argv[])
 {
-// 	if (gSaveFile == NULL){
-// 		fopen_s(&gSaveFile, "out.flv", "wb");
-// 	}
-// 
-// 	apiInit init = NULL;
-// 	apiSeekTo seekTo = NULL;
-// 
-// 	HINSTANCE dll = LoadLibrary(L"FlvProcess.dll");
-// 	if (dll == NULL){
-// 		return 0;
-// 	}
-// 
-// 	init = (apiInit)GetProcAddress(dll, "init");
-// 	consumeData = (apiComsumeFlvData)GetProcAddress(dll, "comsumeFlvData");
-// 	seekTo = (apiSeekTo)GetProcAddress(dll, "seekTo");
-// 
-// 	if (init == NULL || consumeData == NULL || seekTo == NULL){
-// 		return 0;
-// 	}
-// 
-// 	if (!init(2, "enc.flv", "enc_to_dec.flv")){
-// 		return -1;
-// 	}
+	av_register_all();
+
+	if (gSaveFile == NULL){
+		fopen_s(&gSaveFile, "out.flv", "wb");
+	}
+
+	apiInit init = NULL;
+	apiSeekTo seekTo = NULL;
+
+	HINSTANCE dll = LoadLibrary(L"FlvProcess.dll");
+	if (dll == NULL){
+		return 0;
+	}
+
+	init = (apiInit)GetProcAddress(dll, "init");
+	consumeData = (apiComsumeFlvData)GetProcAddress(dll, "comsumeFlvData");
+	seekTo = (apiSeekTo)GetProcAddress(dll, "seekTo");
+
+	if (init == NULL || consumeData == NULL || seekTo == NULL){
+		return 0;
+	}
+
+	if (!init(2, "enc.flv", "enc_to_dec.flv")){
+		return -1;
+	}
 
 	SDL_Event      event;
 	PlayerState    *ps = NULL;
@@ -101,7 +104,9 @@ int _tmain(int argc, _TCHAR* argv[])
 		fprintf(ERR_STREAM, "malloc ps error\n");
 	}
 
+
 	player_state_init(ps);
+
 
 	if (prepare_common(ps) != 0)
 	{
@@ -138,26 +143,23 @@ int _tmain(int argc, _TCHAR* argv[])
 		SDL_WaitEvent(&event);
 		switch (event.type)
 		{
-		case ISSHE_REFRESH_EVENT:
-		{
-									decode_and_show(ps);
-									break;
+		case ISSHE_REFRESH_EVENT:{
+			decode_and_show(ps);
+			break;
 		}
-		case SDL_WINDOWEVENT:
-		{   SDL_GetWindowSize(ps->pwindow, &ps->window_w, &ps->window_h);
-		break;
+		case SDL_WINDOWEVENT:{
+			SDL_GetWindowSize(ps->pwindow, &ps->window_w, &ps->window_h);
+			break;
 		}
-		case SDL_QUIT:
-		{
-							printf("SDL_QUIT£¡\n");
-							ps->quit = 1;
-							SDL_Quit();
-							break;
+		case SDL_QUIT:{
+			printf("SDL_QUIT£¡\n");
+			ps->quit = 1;
+			SDL_Quit();
+			break;
 		}
-		default:
-		{
-					break;
-		}
+		default:{
+			break;
+		 }
 		}
 
 	}
@@ -176,8 +178,10 @@ int prepare_common(PlayerState *ps)
 	if (ps->file == NULL){
 		return -1;
 	}
+	
+// 	int ret = avformat_open_input(&inputFmt, ps->filename, NULL, NULL);
+// 	ret = avformat_find_stream_info(inputFmt, NULL);
 
-	av_register_all();
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER))
 	{
 		fprintf(ERR_STREAM, "init SDL error: %s\n", SDL_GetError());
@@ -192,6 +196,7 @@ int prepare_common(PlayerState *ps)
 	}
 	ps->pformat_ctx = avformat_alloc_context();
 	ps->pformat_ctx->pb = avio;
+
 
 	if (avformat_open_input(&ps->pformat_ctx, NULL, NULL, NULL) != 0){
 		fprintf(ERR_STREAM, "open input file error\n");

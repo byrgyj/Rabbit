@@ -32,10 +32,10 @@ int packet_queue_put(PacketQueue *queue, AVPacket *packet)
      AVPacketList   *pkt_list;
 
      // ???
-     if (av_dup_packet(packet) < 0)
-     {
-         return -1;
-     }
+// 	 if (av_dup_packet(packet) < 0)
+//      {
+//          return -1;
+//      }
 
      pkt_list = (AVPacketList *)av_malloc(sizeof(AVPacketList));
      if (pkt_list == NULL)
@@ -45,6 +45,11 @@ int packet_queue_put(PacketQueue *queue, AVPacket *packet)
 
      pkt_list->pkt   = *packet;
      pkt_list->next  = NULL;
+
+	 if (av_packet_ref(&pkt_list->pkt, packet) < 0)
+	 {
+		 return -1;
+	 }
 
      //上锁
      SDL_LockMutex(queue->mutex);
