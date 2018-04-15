@@ -631,7 +631,7 @@ FlvFormatParser::Tag *FlvFormatParser::CreateTag(unsigned char *pBuf, int nLeftL
 	header.nTSEx = ShowU8(pBuf + 7);
 	header.nStreamID = ShowU24(pBuf + 8);
 	header.nTotalTS = (unsigned int)((header.nTSEx << 24)) + header.nTimeStamp;
-	cout << "total TS : " << header.nTotalTS << endl;
+	//cout << "total TS : " << header.nTotalTS << endl;
 	//cout << "nLeftLen : " << nLeftLen << " , nDataSize : " << pTag->header.nDataSize << endl;
 	if ((header.nDataSize + 11) > nLeftLen)
 	{

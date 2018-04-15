@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestEncrypt", "TestEncrypt\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestDecrypt", "TestDecrypt\TestDecrypt.vcxproj", "{EC9E133D-C666-433E-A9A1-B08623858A3B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Player", "Player\Player.vcxproj", "{4C35A23B-9C16-4E76-9A34-728E5F87D211}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -33,6 +35,10 @@ Global
 		{EC9E133D-C666-433E-A9A1-B08623858A3B}.Debug|Win32.Build.0 = Debug|Win32
 		{EC9E133D-C666-433E-A9A1-B08623858A3B}.Release|Win32.ActiveCfg = Release|Win32
 		{EC9E133D-C666-433E-A9A1-B08623858A3B}.Release|Win32.Build.0 = Release|Win32
+		{4C35A23B-9C16-4E76-9A34-728E5F87D211}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4C35A23B-9C16-4E76-9A34-728E5F87D211}.Debug|Win32.Build.0 = Debug|Win32
+		{4C35A23B-9C16-4E76-9A34-728E5F87D211}.Release|Win32.ActiveCfg = Release|Win32
+		{4C35A23B-9C16-4E76-9A34-728E5F87D211}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

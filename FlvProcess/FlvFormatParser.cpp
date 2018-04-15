@@ -79,9 +79,9 @@ int FlvFormatParser::Parse(unsigned char *pBuf, int nBufSize, int &nUsedLen)
 
 		std::unique_lock<std::mutex> locker(mStdMutex);
 		if (_vpTag.size() > 2){
-			printf("wait to push tag ... \n");
+			//printf("wait to push tag ... \n");
 			mCondition.wait(locker);
-			printf("wait to push tag end \n");
+			//printf("wait to push tag end \n");
 		}
 		_vpTag.push_back(pTag);
 		mCondition.notify_all();
@@ -305,9 +305,9 @@ Tag *FlvFormatParser::getTag(){
 		if (mParserEnd){
 			return NULL;
 		} else {
-			printf("wait for tag ... \n");
+			//printf("wait for tag ... \n");
 			mCondition.wait(locker);
-			printf("wait for tag end ... \n");
+			//printf("wait for tag end ... \n");
 		}
 	} 
 
@@ -839,7 +839,7 @@ Tag *FlvFormatParser::CreateTag(unsigned char *pBuf, int nLeftLen)
 	header.nTSEx = ShowU8(pBuf + 7);
 	header.nStreamID = ShowU24(pBuf + 8);
 	header.nTotalTS = (unsigned int)((header.nTSEx << 24)) + header.nTimeStamp;
-	cout << "total TS : " << header.nTotalTS << endl;
+	//cout << "total TS : " << header.nTotalTS << endl;
 	//cout << "nLeftLen : " << nLeftLen << " , nDataSize : " << pTag->header.nDataSize << endl;
 	if ((header.nDataSize + 11) > nLeftLen)
 	{
